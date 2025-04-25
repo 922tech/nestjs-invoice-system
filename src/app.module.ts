@@ -1,17 +1,16 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
-import { UsersService } from './users/users.service';
-import { UsersModule } from './users/users.module';
-import * as Joi from 'joi';
+import { AuthService } from './auth/auth.service';
 import config from './config';
+import { MongooseModule } from '@nestjs/mongoose';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
-    AuthModule, UsersModule
+    AuthModule, 
+    MongooseModule.forRoot(config.database.url), CommonModule,
   ],
-  providers: [AppService, UsersService],
+  providers: [AppService, AuthService],
 })
 export class AppModule {}

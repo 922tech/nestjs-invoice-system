@@ -5,14 +5,11 @@ export default ({
       environment: process.env.NODE_ENV || 'development',
     },
     database: {
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT as string, 10) || 5432,
-      username: process.env.DB_USERNAME || 'user',
-      password: process.env.DB_PASSWORD || 'password',
-      name: process.env.DB_NAME || 'mydatabase',
+      url: process.env.MONGO_CONNECTION_STRING || 'mongodb://admin:1234@localhost:27017'
     },
     jwt: {
       secret: process.env.JWT_SECRET || 'defaultSecret',
-      expiresIn: process.env.JWT_EXPIRES_IN || '6h',
+      expiresIn: process.env.JWT_EXPIRES_IN || '12h',
+      refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '48h',
     },
   });
