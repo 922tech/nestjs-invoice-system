@@ -1,8 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Invoice, InvoiceDocument } from './invoice.schema';
 import { Model } from 'mongoose';
 import { CreateInvoiceDto } from './invoice.dto';
+import {
+  RabbitMQConnection,
+  RabbitMQProducer,
+} from 'src/common/common.rabbitmq';
+import config from 'src/config';
 
 @Injectable()
 export class InvoiceService {
@@ -40,5 +45,41 @@ export class InvoiceService {
    */
   async findOneById(id: string): Promise<InvoiceDocument | null> {
     return await this.invoiceModel.findById(id).exec();
+  }
+}
+
+@Injectable()
+export class BrokerService implements OnModuleInit, OnModuleDestroy {
+  private connection: RabbitMQConnection;
+  private producer: RabbitMQProducer;
+  /**
+   * Initialize the RabbitMQ connection and channel.
+   */
+  async onModuleInit() {
+    try {
+      this.connection = new RabbitMQConnection();
+      await this.connection.init(config.rabbitMQ.url);
+      console.log('RabbitMQ connection established.');
+    } catch (error) {
+      console.error('Failed to connect to RabbitMQ:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Close the RabbitMQ connection when the application shuts down.
+   */
+  async onModuleDestroy() {
+    if (this.connection) {
+      await this.connection.close();
+    }
+  }
+
+  async sendMessage(
+    message: any,
+    queue: string = config.rabbitMQ.queues.default,
+  ): Promise<void> {
+    this.producer = new RabbitMQProducer(this.connection);
+    return this.producer.publishToQueue(queue, message);
   }
 }

@@ -1,4 +1,5 @@
 import * as amqp from 'amqplib';
+import config from 'src/config';
 
 export class RabbitMQConnection {
   private connection: amqp.Connection;
@@ -117,3 +118,18 @@ export class RabbitMQConsumer {
     }
   }
 }
+
+const connection = new RabbitMQConnection();
+async function sendMessage() {
+  await connection.init(config.rabbitMQ.url);
+  const pro = new RabbitMQProducer(connection);
+  pro.publishToQueue('test', { mse: '1234' }).then((r) => {
+    console.log(r, 'published');
+  });
+  console.log('logged');
+}
+
+// sendMessage().then((e) => {
+//   console.log('started');
+//   console.log(e);
+// });
