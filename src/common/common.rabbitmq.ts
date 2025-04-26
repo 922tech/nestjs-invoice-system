@@ -1,13 +1,13 @@
 import * as amqp from 'amqplib';
 
 export class RabbitMQConnection {
-  private static connection: amqp.Connection;
-  private static channel: amqp.Channel;
+  private connection: amqp.Connection;
+  private channel: amqp.Channel;
 
   /**
    * Initializes the RabbitMQ connection and channel
    */
-  public static async init(rabbitMQUrl: string): Promise<void> {
+  public async init(rabbitMQUrl: string): Promise<void> {
     if (!this.connection) {
       try {
         this.connection = await amqp.connect(rabbitMQUrl);
@@ -23,7 +23,7 @@ export class RabbitMQConnection {
   /**
    * Returns the RabbitMQ channel
    */
-  public static getChannel(): amqp.Channel {
+  public getChannel(): amqp.Channel {
     if (!this.channel) {
       throw new Error(
         'RabbitMQ channel is not initialized. Call init() first.',
@@ -35,7 +35,7 @@ export class RabbitMQConnection {
   /**
    * Closes the RabbitMQ connection
    */
-  public static async close(): Promise<void> {
+  public async close(): Promise<void> {
     if (this.channel) {
       await this.channel.close();
     }
@@ -47,11 +47,22 @@ export class RabbitMQConnection {
 }
 
 export class RabbitMQProducer {
-  public static async publishToQueue(queue: string, message: any): Promise<void> {
+  private channel: amqp.Channel;
+
+  /**
+   * Constructor accepts a RabbitMQConnection instance
+   */
+  constructor(private connection: RabbitMQConnection) {
+    this.channel = connection.getChannel();
+  }
+
+  /**
+   * Publishes a message to the specified queue
+   */
+  public async publishToQueue(queue: string, message: any): Promise<void> {
     try {
-      const channel = RabbitMQConnection.getChannel();
-      await channel.assertQueue(queue, { durable: true });
-      channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
+      await this.channel.assertQueue(queue, { durable: true });
+      this.channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
         persistent: true,
       });
       console.log(`Message sent to queue "${queue}":`, message);
@@ -63,30 +74,38 @@ export class RabbitMQProducer {
 }
 
 export class RabbitMQConsumer {
+  private channel: amqp.Channel;
+
+  /**
+   * Constructor accepts a RabbitMQConnection instance
+   */
+  constructor(private connection: RabbitMQConnection) {
+    this.channel = connection.getChannel();
+  }
+
   /**
    * Consumes messages from the specified queue
    */
-  public static async subscribeToQueue(
+  public async subscribeToQueue(
     queue: string,
     onMessage: (message: any) => Promise<void>,
   ): Promise<void> {
     try {
-      const channel = RabbitMQConnection.getChannel();
-      await channel.assertQueue(queue, { durable: true });
+      await this.channel.assertQueue(queue, { durable: true });
 
       console.log(`Listening to queue "${queue}"...`);
-      channel.consume(
+      this.channel.consume(
         queue,
         async (msg) => {
           if (msg) {
             try {
               const content = JSON.parse(msg.content.toString());
               console.log(`Message received from queue "${queue}":`, content);
-              await onMessage(content); 
-              channel.ack(msg); // Acknowledge the message if everything was OK
+              await onMessage(content);
+              this.channel.ack(msg); // Acknowledge the message if everything was OK
             } catch (err) {
               console.error('Error processing message:', err.message);
-              channel.nack(msg); // Requeue the message for retry
+              this.channel.nack(msg); // Requeue the message for retry
             }
           }
         },
