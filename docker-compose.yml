@@ -1,12 +1,10 @@
-version: '3.8'
-
 services:
   rabbitmq:
     image: rabbitmq:3.11.6-management
     container_name: rabbitmq
     ports:
-      - "5672:5672" 
-      - "15672:15672"
+      - '5672:5672'
+      - '15672:15672'
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -17,16 +15,36 @@ services:
     image: mongo:6.0
     container_name: mongo
     ports:
-      - "27017:27017" 
+      - '27017:27017'
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin 
-      MONGO_INITDB_ROOT_PASSWORD: 1234 
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: 1234
     volumes:
-      - mongo_data:/data/db 
+      - mongo_data:/data/db
+  web:
+    image: invoice_manager:latest
+    container_name: invoice_manager_app
+    ports:
+      - '3000:3000'
+    build:
+      context: .
+
+    depends_on:
+      - mongo
+      - rabbitmq
+    environment:
+      APP_PORT: ${APP_PORT:-3000}
+      NODE_ENV: ${NODE_ENV:-production}
+      MONGO_CONNECTION_STRING: ${MONGO_CONNECTION_STRING:-mongodb://admin:1234@mongo:27017}
+      JWT_SECRET: ${JWT_SECRET:-defaultSecret}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-12h}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-48h}
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672}
+      RABBITMQ_DEFAULT_QUEUE: ${RABBITMQ_DEFAULT_QUEUE:-default}
+    restart: on-failure
 
 volumes:
   rabbitmq_data:
     driver: local
   mongo_data:
     driver: local
-    
