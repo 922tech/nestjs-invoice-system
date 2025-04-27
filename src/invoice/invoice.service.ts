@@ -1,4 +1,9 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Invoice, InvoiceDocument } from './invoice.schema';
 import { Model } from 'mongoose';
@@ -8,6 +13,7 @@ import {
   RabbitMQProducer,
 } from '../common/common.rabbitmq';
 import config from '../config';
+import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule';
 
 @Injectable()
 export class InvoiceService {
@@ -81,5 +87,23 @@ export class BrokerService implements OnModuleInit, OnModuleDestroy {
   ): Promise<void> {
     this.producer = new RabbitMQProducer(this.connection);
     return this.producer.publishToQueue(queue, message);
+  }
+}
+
+@Injectable()
+export class CronService implements OnModuleInit {
+  private readonly logger = new Logger(CronService.name);
+  constructor(private readonly schedulerRegistry: SchedulerRegistry) {}
+
+  onModuleInit() {
+    const cronJobs = this.schedulerRegistry.getCronJobs();
+    cronJobs.forEach((value, key) => {
+      this.logger.log(`Registered cron job: ${key}`);
+    });
+  }
+
+  @Cron(CronExpression.EVERY_10_SECONDS, { name: 'exampleJob' })
+  handleCron() {
+    this.logger.log('Cron job executed');
   }
 }
