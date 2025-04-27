@@ -7,7 +7,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './auth.schema';
-import { MongooseErrorCodes } from 'src/common/common.constants';
+import { MongooseErrorCodes } from '../common/common.constants';
 
 @Injectable()
 export class AuthService {

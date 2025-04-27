@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { toJSONPlugin } from 'src/common/common.utils';
+import { toJSONPlugin } from '../common/common.utils';
 
 @Schema()
 export class Item {

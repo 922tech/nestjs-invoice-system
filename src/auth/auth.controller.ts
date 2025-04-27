@@ -12,7 +12,7 @@ import { LoginDto } from './auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
-import config from 'src/config';
+import config from '../config';
 import { User, UserDocument } from './auth.schema';
 import { AuthGuard } from '@nestjs/passport';
 

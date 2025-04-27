@@ -6,8 +6,8 @@ import { CreateInvoiceDto } from './invoice.dto';
 import {
   RabbitMQConnection,
   RabbitMQProducer,
-} from 'src/common/common.rabbitmq';
-import config from 'src/config';
+} from '../common/common.rabbitmq';
+import config from '../config';
 
 @Injectable()
 export class InvoiceService {

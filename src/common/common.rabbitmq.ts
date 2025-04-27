@@ -1,5 +1,5 @@
 import * as amqp from 'amqplib';
-import config from 'src/config';
+import config from '../config';
 
 export class RabbitMQConnection {
   private connection: amqp.Connection;
@@ -129,7 +129,4 @@ async function sendMessage() {
   console.log('logged');
 }
 
-// sendMessage().then((e) => {
-//   console.log('started');
-//   console.log(e);
-// });
+
