@@ -1,4 +1,3 @@
-# Stage 1: Build the application
 FROM node:22.15.0-alpine AS builder
 
 

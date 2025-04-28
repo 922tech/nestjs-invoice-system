@@ -52,10 +52,60 @@ export class InvoiceService {
   async findOneById(id: string): Promise<InvoiceDocument | null> {
     return await this.invoiceModel.findById(id).exec();
   }
+
+  async calculateTotalDailySales(): Promise<number> {
+    const now = new Date();
+    const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    const result = await this.invoiceModel.aggregate([
+      {
+        $match: {
+          date: {
+            $gte: last24Hours,
+            $lte: now,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalSales: { $sum: '$amount' },
+        },
+      },
+    ]);
+
+    return result.length > 0 ? result[0].totalSales : 0;
+  }
+
+  async calculateTotalQuantityPerSKU(): Promise<
+    { sku: string; totalQuantity: number }[]
+  > {
+    const result = await this.invoiceModel.aggregate([
+      {
+        $unwind: '$items',
+      },
+      {
+        $group: {
+          _id: '$items.sku',
+          totalQuantity: { $sum: '$items.quantity' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          sku: '$_id',
+          totalQuantity: 1,
+        },
+      },
+    ]);
+
+    return result;
+  }
 }
 
 @Injectable()
 export class BrokerService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(CronService.name);
   private connection: RabbitMQConnection;
   private producer: RabbitMQProducer;
   /**
@@ -65,9 +115,9 @@ export class BrokerService implements OnModuleInit, OnModuleDestroy {
     try {
       this.connection = new RabbitMQConnection();
       await this.connection.init(config.rabbitMQ.url);
-      console.log('RabbitMQ connection established.');
+      this.logger.log('RabbitMQ connection established.');
     } catch (error) {
-      console.error('Failed to connect to RabbitMQ:', error.message);
+      this.logger.error('Failed to connect to RabbitMQ:', error.message);
       throw error;
     }
   }
@@ -90,10 +140,18 @@ export class BrokerService implements OnModuleInit, OnModuleDestroy {
   }
 }
 
+enum EventTypes {
+  REPORT = 'report'
+}
+
 @Injectable()
 export class CronService implements OnModuleInit {
   private readonly logger = new Logger(CronService.name);
-  constructor(private readonly schedulerRegistry: SchedulerRegistry) {}
+  constructor(
+    private readonly schedulerRegistry: SchedulerRegistry,
+    private readonly brokerService: BrokerService,
+    private readonly invoiceService: InvoiceService,
+  ) {}
 
   onModuleInit() {
     const cronJobs = this.schedulerRegistry.getCronJobs();
@@ -102,8 +160,16 @@ export class CronService implements OnModuleInit {
     });
   }
 
-  @Cron(CronExpression.EVERY_10_SECONDS, { name: 'exampleJob' })
-  handleCron() {
-    this.logger.log('Cron job executed');
+  @Cron(
+    config.app.environment === 'development'
+      ? CronExpression.EVERY_5_SECONDS
+      : CronExpression.EVERY_DAY_AT_NOON,
+    { name: 'caclulationJob' },
+  )
+  async handleCron() {
+    const dailySales = await this.invoiceService.calculateTotalDailySales();
+    const salesPerSku =
+      await this.invoiceService.calculateTotalQuantityPerSKU();
+    this.brokerService.sendMessage({ 'event': EventTypes.REPORT, dailySales, salesPerSku });
   }
 }
