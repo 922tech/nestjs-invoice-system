@@ -19,8 +19,8 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: 1234
-    volumes:
-      - mongo_data:/data/db
+    # volumes:
+    #   - mongo_data:/data/db
   web:
     image: invoice_manager:latest
     container_name: invoice_manager_app
@@ -41,7 +41,10 @@ services:
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-48h}
       RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672}
       RABBITMQ_DEFAULT_QUEUE: ${RABBITMQ_DEFAULT_QUEUE:-default}
+      DATABASE_NAME: ${DATABASE_NAME:-invoices}
+      
     restart: on-failure
+    command: ["sh", "-c", "yarn migrate"]
 
 volumes:
   rabbitmq_data:
