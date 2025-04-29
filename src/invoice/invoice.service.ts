@@ -12,7 +12,7 @@ import {
   RabbitMQConnection,
   RabbitMQProducer,
 } from '../common/common.rabbitmq';
-import config from '../config';
+import config, { isDev } from '../config';
 import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule';
 
 @Injectable()
@@ -161,7 +161,7 @@ export class CronService implements OnModuleInit {
   }
 
   @Cron(
-    config.app.environment === 'development'
+    isDev
       ? CronExpression.EVERY_5_SECONDS
       : CronExpression.EVERY_DAY_AT_NOON,
     { name: 'caclulationJob' },

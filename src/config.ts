@@ -1,13 +1,16 @@
+export const isDev = process.env.NODE_ENV === 'development';
+export const isTest = process.env.NODE_ENV === 'test';
+
 const config = {
   app: {
     name: process.env.APP_NAME || 'InvoiceSystem',
     port: parseInt(process.env.APP_PORT as string, 10) || 3000,
-    environment: process.env.NODE_ENV || 'development',
+    environment: process.env.NODE_ENV === 'development',
   },
   database: {
     url:
       process.env.MONGO_CONNECTION_STRING ||
-      "mongodb://admin:1234@127.0.0.1:27017/invoices?authSource=admin",
+      !isTest ? "mongodb://admin:1234@127.0.0.1:27017/invoices?authSource=admin" : "mongodb://admin:1234@127.0.0.1:27017/test_invoices?authSource=admin",
   },
   jwt: {
     secret: process.env.JWT_SECRET || 'defaultSecret',
