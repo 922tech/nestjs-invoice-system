@@ -19,8 +19,9 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: 1234
-    # volumes:
-    #   - mongo_data:/data/db
+    volumes:
+      - mongo_data:/data/db
+      
   web:
     image: invoice_manager:latest
     container_name: invoice_manager_app
@@ -45,8 +46,19 @@ services:
     volumes:
       - ./:/app
     restart: on-failure
-    command: ["sh", "-c", "yarn migrate"]
-
+    command: ["sh", "-c", "yarn migrate || exit 1 && yarn start:prod "]
+  
+  worker:
+    image: invoice_manager_worker:latest
+    container_name: invoice_manager_worker
+    build:
+      context: ../messaging-service
+    environment:
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672}
+      RABBITMQ_DEFAULT_QUEUE: ${RABBITMQ_DEFAULT_QUEUE:-default}
+    depends_on:
+      - rabbitmq
+      
 volumes:
   rabbitmq_data:
     driver: local

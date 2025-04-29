@@ -9,8 +9,8 @@ COPY yarn.lock ./
 
 COPY . .
 
-RUN yarn add migrate-mongo
 RUN yarn build
+RUN npm install -g migrate-mongo@12.1.3
 
 FROM node:22.15.0-alpine
 

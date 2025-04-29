@@ -13,11 +13,11 @@ async function bootstrap() {
     .addTag('invoice')
     .addBearerAuth(
       {
-        type: 'http', // HTTP authentication scheme
-        scheme: 'bearer', // Bearer token
-        bearerFormat: 'JWT', // Optional: specify JWT format
+        type: 'http', 
+        scheme: 'bearer',
+        bearerFormat: 'JWT', 
       },
-      'access-token', // Name of the security scheme
+      'access-token', 
     )
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
