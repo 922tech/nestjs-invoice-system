@@ -42,7 +42,8 @@ services:
       RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672}
       RABBITMQ_DEFAULT_QUEUE: ${RABBITMQ_DEFAULT_QUEUE:-default}
       DATABASE_NAME: ${DATABASE_NAME:-invoices}
-      
+    volumes:
+      - ./:/app
     restart: on-failure
     command: ["sh", "-c", "yarn migrate"]
 

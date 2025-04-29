@@ -7,8 +7,7 @@ const config = {
   database: {
     url:
       process.env.MONGO_CONNECTION_STRING ||
-      'mongodb://admin:1234@localhost:27017/invoices',
-    name: "invoices"
+      "mongodb://admin:1234@127.0.0.1:27017/invoices?authSource=admin",
   },
   jwt: {
     secret: process.env.JWT_SECRET || 'defaultSecret',
